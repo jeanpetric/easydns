@@ -1,4 +1,4 @@
 service http://petric.esy.es/addressbook.php
 domain jean
 hash 4b0b0a977310b3952502f8d927d9e0af
-interval 10
+interval 300
