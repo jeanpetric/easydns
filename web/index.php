@@ -4,7 +4,7 @@ if (isset($_POST['domain'])) {
   $domain = $_POST['domain'];
   $miliseconds = round(microtime(true)*1000);
   $hash = md5($miliseconds);
-  file_put_contents("table.txt", $domain . " " . $hash, FILE_APPEND);
+  file_put_contents("table.txt", $domain . " " . $hash . "\n", FILE_APPEND);
 
   echo "Your domain: $domain <br>";
   echo "Your hash: $hash <br><br>";

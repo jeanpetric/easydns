@@ -50,7 +50,7 @@ void url_upload(String *ip, void *arg)
   CURL *curl;
   CURLcode response;
   Configuration *conf = (Configuration*) arg;
-  char url[21] = "url=";
+  char url[20] = "ip=";
 
   curl = curl_easy_init();
   if(curl) {
