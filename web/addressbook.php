@@ -1,6 +1,6 @@
 <?php
 
-if (!filter_var($_POST['ip'], FILTER_VALIDATE_URL)) {
+if (!filter_var($_POST['ip'], FILTER_VALIDATE_IP)) {
   exit(1);
 } else {
   $ip = $_POST['ip'];
