@@ -6,12 +6,17 @@ if (isset($_POST['domain'])) {
   $hash = md5($miliseconds);
   file_put_contents("table.txt", $domain . " " . $hash . "\n", FILE_APPEND);
 
-  echo "Your domain: $domain <br>";
-  echo "Your hash: $hash <br><br>";
+  $prep_conf_file = "service http://petric.esy.es/addressbook.php\n";
+  $prep_conf_file .= "domain " . $domain . "\n";
+  $prep_conf_file .= "hash " . $hash . "\n";
+  $prep_conf_file .= "interval 300\n";
 
   $_POST = array();
   
-  echo "Success!";
+  header("Content-type: text/plain");
+  header("Content-Disposition: attachment; filename=conf.txt");
+  echo $prep_conf_file;
+  exit;
 }
 
 ?>
