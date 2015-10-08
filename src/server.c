@@ -180,8 +180,9 @@ void set_config(const char *c_path)
     }
 
     fclose(c_fp);
-    if (line)
-        free(line);
+    //TODO: causing SEGFAULT in some cases!??
+    //if (line)
+    //    free(line);
     return;
 }
 
