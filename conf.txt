@@ -1,0 +1,4 @@
+service http://petric.esy.es/
+domain jean
+hash 90706d435901abea0c488db018426da4
+interval 10

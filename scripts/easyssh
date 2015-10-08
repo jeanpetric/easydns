@@ -1,0 +1,18 @@
+#!/bin/bash
+
+WEB_SERVICE=http://petric.esy.es/
+
+# ./easyssh <username> <domain>
+# ./easyssh jean jeanpetric
+
+username=$1
+domain=$2
+
+if [ "$#" -ne 2 ]; then
+  echo "usage: ./easyssh <username> <domain>"
+  exit
+fi
+
+url=$(wget $WEB_SERVICE$2 -q -O -)
+
+ssh $username@$url
