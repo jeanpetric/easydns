@@ -13,7 +13,7 @@ if (!filter_var($_POST['ip'], FILTER_VALIDATE_IP)) {
         $line = trim($line);
         $e = explode(" ", $line);
         if (!strcmp($e[0], $domain) && !strcmp($e[1], $hash)) {
-            file_put_contents($e[0], $ip);
+            file_put_contents($e[0], $ip . '\n');
             break;
         }
     }
