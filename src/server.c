@@ -30,128 +30,195 @@
 
 #include <curl/curl.h>
 
+#include "utils.h"
+
 static const char my_ip_url[] = "http://ipinfo.io/ip";
 
-typedef struct Configuration
+struct config
 {
-  long unsigned int update_interval;
-  char *url_destination;
-} Configuration;
+    char *service;
+    char *domain;
+    char *hash;
+    long unsigned int update_interval;
+};
+static struct config cg;
 
-typedef struct string
+struct string
 {
-  char *ptr;
-  size_t len;
+    char *ptr;
+    size_t len;
 
-} String;
+};
 
-void url_upload(String *ip, void *arg)
+void url_upload(struct string *ip, void *arg)
 {
-  CURL *curl;
-  CURLcode response;
-  Configuration *conf = (Configuration*) arg;
-  char url[20] = "ip=";
+    CURL *curl;
+    CURLcode response;
+    struct config *cg = (struct config*) arg;
+    char url[20] = "ip=";
 
-  curl = curl_easy_init();
-  if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, conf->url_destination);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, strcat(url, ip->ptr));
-    response = curl_easy_perform(curl);
+    curl = curl_easy_init();
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, cg->service);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, strcat(url, ip->ptr));
+        response = curl_easy_perform(curl);
 
-    if(response != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-          curl_easy_strerror(response));
-    curl_easy_cleanup(curl);
-  }
+        if(response != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                    curl_easy_strerror(response));
+        curl_easy_cleanup(curl);
+    }
 }
 
 void init_string(struct string *s) {
-  s->len = 0;
-  s->ptr = malloc(s->len+1);
-  if (s->ptr == NULL) {
-    fprintf(stderr, "malloc() failed\n");
-    exit(EXIT_FAILURE);
+    s->len = 0;
+    s->ptr = malloc(s->len+1);
+    if (s->ptr == NULL) {
+        fprintf(stderr, "malloc() failed\n");
+        exit(EXIT_FAILURE);
 
-  }
-  s->ptr[0] = '\0';
+    }
+    s->ptr[0] = '\0';
 }
 
 size_t callback(void *ptr, size_t size, size_t nmemb, struct string *s)
 {
-  size_t new_len = s->len + size*nmemb;
-  s->ptr = realloc(s->ptr, new_len+1);
-  if (s->ptr == NULL) {
-    fprintf(stderr, "realloc() failed\n");
-    exit(EXIT_FAILURE);
+    size_t new_len = s->len + size*nmemb;
+    s->ptr = realloc(s->ptr, new_len+1);
+    if (s->ptr == NULL) {
+        fprintf(stderr, "realloc() failed\n");
+        exit(EXIT_FAILURE);
 
-  }
-  memcpy(s->ptr+s->len, ptr, size*nmemb);
-  s->ptr[new_len] = '\0';
-  s->len = new_len;
+    }
+    memcpy(s->ptr+s->len, ptr, size*nmemb);
+    s->ptr[new_len] = '\0';
+    s->len = new_len;
 
-  return size*nmemb;
+    return size*nmemb;
 }
 
-String ip_address()
+struct string ip_address()
 {
-  CURL *curl;
-  CURLcode response;
-  String url_data;
+    CURL *curl;
+    CURLcode response;
+    struct string url_data;
 
-  curl = curl_easy_init();
+    curl = curl_easy_init();
 
-  if (curl) {
-    init_string(&url_data);
-    curl_easy_setopt(curl, CURLOPT_URL, my_ip_url);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &url_data);
+    if (curl) {
+        init_string(&url_data);
+        curl_easy_setopt(curl, CURLOPT_URL, my_ip_url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &url_data);
 
-    response = curl_easy_perform(curl);
+        response = curl_easy_perform(curl);
 
-    if (response != CURLE_OK) {
-      printf("something went wrong with curl...");
-      exit(EXIT_FAILURE);
+        if (response != CURLE_OK) {
+            printf("something went wrong with curl...");
+            exit(EXIT_FAILURE);
+        }
+
+        curl_easy_cleanup(curl);
     }
 
-    curl_easy_cleanup(curl);
-  }
-
-  return url_data;
+    return url_data;
 }
 
 void update(void *arg)
 {
-  printf("Updating an IP address...\n");
-  String ip = ip_address();
+    printf("Updating an IP address...\n");
+    struct string ip = ip_address();
 
-  printf("url_upload\n");
-  url_upload(&ip, arg);
+    printf("url_upload\n");
+    url_upload(&ip, arg);
 
-  printf("%s\n", ip.ptr);
-  free(ip.ptr);
+    printf("%s\n", ip.ptr);
+    free(ip.ptr);
 }
 
 void *update_thread(void *arg)
 {
-  Configuration *conf = (Configuration*) arg;
+    struct config *cg = (struct config*) arg;
 
-  while (1)
-  {
-    sleep(conf->update_interval);
-    update(arg);
-  }
+    while (1)
+    {
+        sleep(cg->update_interval);
+        update(arg);
+    }
 }
 
-
-int main(int argc, char *argv[])
+void set_config(const char *c_path)
 {
-  Configuration conf;
-  conf.update_interval = 10;
-  char url_destination[] = "http://petric.esy.es/addressbook.php";
-  conf.url_destination = url_destination;
+    FILE *c_fp;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    char *tokens, *key, *value;
 
-  pthread_t tid;
-  pthread_create(&tid, NULL, &update_thread, &conf);
-  pthread_join(tid, NULL);
-  return 0;
+    c_fp = fopen(c_path, "r");
+    if (c_fp == NULL)
+        exit(EXIT_FAILURE);
+
+    while ((read = getline(&line, &len, c_fp)) != -1) {
+        key = strsep(&line, " ");
+        value = strsep(&line, "\n");
+
+        char *dest = malloc(sizeof(int)*str_size(value));
+        char *p = strncpy(dest, value, str_size(value));
+
+        if (strcmp(key, "service") == 0) {
+            cg.service = p;
+        } else if (strcmp(key, "domain") == 0) {
+            cg.domain = p;
+        } else if (strcmp(key, "hash") == 0) {
+            cg.hash = p;
+        } else if (strcmp(key, "interval") == 0) {
+            cg.update_interval = atoi(p);
+        }
+    }
+
+    fclose(c_fp);
+    if (line)
+        free(line);
+    return;
+}
+
+static int handle_options(const char ***argv, int *argc, int *envchanged)
+{
+    const char **orig_argv = *argv;
+
+    while (*argc > 0) {
+        const char *cmd = (*argv)[0];
+        if (cmd[0] != '-')
+            break;
+
+        if (skip_prefix(cmd, "--config-path", &cmd)) {
+            if (*cmd == '=')
+                set_config(cmd + 1);
+            else {
+                exit(0);
+            }
+        }
+
+        (*argv)++;
+        (*argc)--;
+    }
+}
+
+int main(int argc, char **av)
+{
+    const char **argv = (const char **) av;
+
+    argv++;
+    argc--;
+
+    handle_options(&argv, &argc, NULL);
+    //TODO: free cg at the end!
+
+    printf("%s\n%s\n%s\n%ld\n", cg.service, cg.domain, cg.hash, cg.update_interval);
+    pthread_t tid;
+    pthread_create(&tid, NULL, &update_thread, &cg);
+    pthread_join(tid, NULL);
+
+    return 0;
 }
