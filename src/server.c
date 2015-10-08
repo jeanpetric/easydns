@@ -50,17 +50,23 @@ struct string
 
 };
 
-void url_upload(struct string *ip, void *arg)
+void url_upload(struct string *ip)
 {
     CURL *curl;
     CURLcode response;
-    struct config *cg = (struct config*) arg;
-    char url[20] = "ip=";
+    char post_req[128];
+
+    strcpy(post_req, "ip=");
+    strcat(post_req, ip->ptr);
+    strcat(post_req, "&domain=");
+    strcat(post_req, cg.domain);
+    strcat(post_req, "&hash=");
+    strcat(post_req, cg.hash);
 
     curl = curl_easy_init();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, cg->service);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, strcat(url, ip->ptr));
+        curl_easy_setopt(curl, CURLOPT_URL, cg.service);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_req);
         response = curl_easy_perform(curl);
 
         if(response != CURLE_OK)
@@ -124,26 +130,22 @@ struct string ip_address()
     return url_data;
 }
 
-void update(void *arg)
+void update()
 {
-    printf("Updating an IP address...\n");
     struct string ip = ip_address();
+    str_trim_right(&ip.ptr);
 
-    printf("url_upload\n");
-    url_upload(&ip, arg);
+    url_upload(&ip);
 
-    printf("%s\n", ip.ptr);
     free(ip.ptr);
 }
 
-void *update_thread(void *arg)
+void *update_thread()
 {
-    struct config *cg = (struct config*) arg;
-
     while (1)
     {
-        sleep(cg->update_interval);
-        update(arg);
+        sleep(cg.update_interval);
+        update();
     }
 }
 
@@ -215,7 +217,6 @@ int main(int argc, char **av)
     handle_options(&argv, &argc, NULL);
     //TODO: free cg at the end!
 
-    printf("%s\n%s\n%s\n%ld\n", cg.service, cg.domain, cg.hash, cg.update_interval);
     pthread_t tid;
     pthread_create(&tid, NULL, &update_thread, &cg);
     pthread_join(tid, NULL);

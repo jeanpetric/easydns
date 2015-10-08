@@ -41,4 +41,30 @@ static inline int str_size(const char * str)
 
     return i;
 }
+
+static inline int is_blank(char *str, int pos)
+{
+    if (str[pos] == '\n'
+            || str[pos] == ' '
+            || str[pos] == '\t') {
+        return 0;
+    }
+    return 1;
+}
+
+static inline int str_trim_right(char **str)
+{
+    int i = 0;
+
+    if (*str == NULL)
+        return -1;
+
+    size_t size = str_size(*str);
+
+    while (--size) {
+        if (is_blank(*str, size) == 0) {
+            (*str)[size] = '\0';
+        }
+    }
+}
 #endif
