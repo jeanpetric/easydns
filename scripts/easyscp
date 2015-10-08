@@ -1,0 +1,20 @@
+#!/bin/bash
+
+WEB_SERVICE=http://petric.esy.es/
+
+# ./easyscp <username> <domain> <destination>
+# ./easyscp jean jeanpetric
+
+username=$1
+domain=$2
+src=$3
+dest=$4
+
+if [ "$#" -ne 4 ]; then
+  echo "usage: ./easyscp <username> <domain>"
+  exit
+fi
+
+url=$(wget $WEB_SERVICE$2 -q -O -)
+
+scp $username@$url$src $dest
