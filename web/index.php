@@ -6,7 +6,7 @@ if (isset($_POST['domain'])) {
   $hash = md5($miliseconds);
   file_put_contents("table.txt", $domain . " " . $hash . "\n", FILE_APPEND);
 
-  $prep_conf_file = "service http://petric.esy.es/addressbook.php\n";
+  $prep_conf_file = "service http://$_SERVER['HTTP_HOST']/addressbook.php\n";
   $prep_conf_file .= "domain " . $domain . "\n";
   $prep_conf_file .= "hash " . $hash . "\n";
   $prep_conf_file .= "interval 300\n";
@@ -39,7 +39,7 @@ if (isset($_POST['domain'])) {
         My domain (max 15 char):
       </td>
       <td>
-        http://petric.esy.es/
+	  http://<?php echo $_SERVER['HTTP_HOST']; ?>/
         <input type="text" maxlength="15" name="domain" />
       </td>
     </tr>
