@@ -6,7 +6,8 @@ if (isset($_POST['domain'])) {
   $hash = md5($miliseconds);
   file_put_contents("table.txt", $domain . " " . $hash . "\n", FILE_APPEND);
 
-  $prep_conf_file = "service http://$_SERVER['HTTP_HOST']/addressbook.php\n";
+  $url = $_SERVER['HTTP_HOST'];
+  $prep_conf_file = "service http://$url/addressbook.php\n";
   $prep_conf_file .= "domain " . $domain . "\n";
   $prep_conf_file .= "hash " . $hash . "\n";
   $prep_conf_file .= "interval 300\n";
