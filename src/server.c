@@ -144,8 +144,8 @@ void *update_thread()
 {
     while (1)
     {
-        sleep(cg.update_interval);
         update();
+        sleep(cg.update_interval);
     }
 }
 
